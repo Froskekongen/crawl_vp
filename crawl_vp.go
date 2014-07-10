@@ -42,7 +42,7 @@ func nPage(baseUrl string,pType string,reg *regexp.Regexp,mc chan map[string]int
     return
 } 
 
-func getNPages()map[string]int {
+func GetNPages()map[string]int {
     m:=make(chan map[string]int,1)
     baseUrl:="http://www.vinmonopolet.no/vareutvalg/sok?query=*&sort=2&sortMode=0&page=1&filterIds=25&filterValues="
     wineTypes:=[]string{"R%C3%B8dvin","Musserende+vin","Hvitvin","Ros%C3%A9vin","Fruktvin","Sterkvin","Brennevin","%C3%B8l"}

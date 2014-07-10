@@ -54,23 +54,45 @@ type WineRep struct{
 
 
 
-func GetProducts(url string,reg *regexp.Regexp,urlChan chan string) {
+func GetProducts(url string,reg *regexp.Regexp,urlChan chan string,retryChan chan map[string]int) {
+    maxRetries:=5
     resp,err1:=http.Get(url)
     if err1!=nil{
-        urlChan <- url
-        return 
+        m:=<-retryChan
+        m[url]++
+        retries:=m[url]
+        retryChan <- m
+        if retries<maxRetries{
+            urlChan <- url
+        }
     }
     defer resp.Body.Close()
 
     body, err2 := ioutil.ReadAll(resp.Body)
     if err2!=nil{
-        urlChan <- url
+        m:=<-retryChan
+        m[url]++
+        retries:=m[url]
+        retryChan <- m
+        if retries<maxRetries{
+            urlChan <- url
+        }
         return
     }
     //fmt.Println(string(body))
 
     mm:=reg.FindAllSubmatch(body,-1)
     lenM:=len(mm)
+    if lenM==0{
+        m:=<-retryChan
+        m[url]++
+        retries:=m[url]
+        retryChan <- m
+        if retries<maxRetries{
+            urlChan <- url
+        }
+        return
+    }
     m:=make([]WineRep,lenM)
 
 
