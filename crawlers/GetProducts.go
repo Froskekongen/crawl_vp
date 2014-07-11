@@ -38,24 +38,34 @@ import (
 //}
 
 type WineRep struct{
+    //strings
     Url string `json:"url"`
     Name string `json:"name"`
     WineType string `json:"WineType"`
-    Prodnum uint64 `json:"prodnum"`
-    Price float64 `json:"price"`
-    Vintage uint64 `json:"vintage"`
     Producer string `json:"producer"`
     Wholesaler string `json:"wholesaler"`
-    Distributor uint64 `json:"distributor"`
-    Store string `json:"store"`
-    Alcohol float64 `json:"alcohol"`
-    Sugar float64 `json:"sugar"`
-    Acid float64 `json:"acid"`
     Material string `json:"material"`
     Country string `json:"country"`
     Subcountry1 string `json:"subcountry1"`
     Subcountry2 string `json:"subcountry2"`
+    Store string `json:"store"`
+
+    //ints
+    Prodnum uint64 `json:"prodnum"`
+    Vintage uint64 `json:"vintage"`
+    Distributor uint64 `json:"distributor"`
+
+    //floats
+    Alcohol float64 `json:"alcohol"`
+    Sugar float64 `json:"sugar"`
+    Acid float64 `json:"acid"`
+    Price float64 `json:"price"`
+
+    //Flags
+    Soldout bool `json:"soldout"`
+    Obsoleteproduct bool `json:"obsoleteproduct"`
     Deeplookup bool `json:"deeplokup"`
+    
 }
 
 
@@ -68,28 +78,30 @@ type WineRep struct{
 
 
 func GetProducts(url string,reg *regexp.Regexp,urlChan chan string,retryChan chan map[string]int) {
-    maxRetries:=5
+//    maxRetries:=5
     resp,err1:=http.Get(url)
-    if err1!=nil{
-        m:=<-retryChan
-        m[url]++
-        retries:=m[url]
-        retryChan <- m
-        if retries<maxRetries{
-            urlChan <- url
-        }
-    }
     defer resp.Body.Close()
+    if err1!=nil{
+//        m:=<-retryChan
+//        m[url]++
+//        retries:=m[url]
+//        retryChan <- m
+//        if retries<maxRetries{
+//            urlChan <- url
+//        }
+        return
+    }
+    
 
     body, err2 := ioutil.ReadAll(resp.Body)
     if err2!=nil{
-        m:=<-retryChan
-        m[url]++
-        retries:=m[url]
-        retryChan <- m
-        if retries<maxRetries{
-            urlChan <- url
-        }
+//        m:=<-retryChan
+//        m[url]++
+//        retries:=m[url]
+//        retryChan <- m
+//        if retries<maxRetries{
+//            urlChan <- url
+//        }
         return
     }
     //fmt.Println(string(body))
@@ -97,13 +109,13 @@ func GetProducts(url string,reg *regexp.Regexp,urlChan chan string,retryChan cha
     mm:=reg.FindAllSubmatch(body,-1)
     lenM:=len(mm)
     if lenM==0{
-        m:=<-retryChan
-        m[url]++
-        retries:=m[url]
-        retryChan <- m
-        if retries<maxRetries{
-            urlChan <- url
-        }
+//        m:=<-retryChan
+//        m[url]++
+//        retries:=m[url]
+//        retryChan <- m
+//        if retries<maxRetries{
+//            urlChan <- url
+//        }
         return
     }
     m:=make([]WineRep,lenM)
