@@ -43,6 +43,19 @@ type WineRep struct{
     WineType string `json:"WineType"`
     Prodnum uint64 `json:"prodnum"`
     Price float64 `json:"price"`
+    Vintage uint64 `json:"vintage"`
+    Producer string `json:"producer"`
+    Wholesaler string `json:"wholesaler"`
+    Distributor uint64 `json:"distributor"`
+    Store string `json:"store"`
+    Alcohol float64 `json:"alcohol"`
+    Sugar float64 `json:"sugar"`
+    Acid float64 `json:"acid"`
+    Material string `json:"material"`
+    Country string `json:"country"`
+    Subcountry1 string `json:"subcountry1"`
+    Subcountry2 string `json:"subcountry2"`
+    Deeplookup bool `json:"deeplokup"`
 }
 
 
