@@ -5,7 +5,7 @@ import (
     "regexp"
     "strconv"
     "sync"
-    "github.com/froskekongen/crawl_vp/crawlers"
+    "github.com/Froskekongen/crawl_vp/crawlers"
     "fmt"
 )
 
