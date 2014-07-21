@@ -8,6 +8,8 @@ import (
     "strconv"
     //"sync"
     "html"
+    "time"
+    "encoding/json"
 )
 
 
@@ -40,7 +42,9 @@ type WineRep struct{
     Soldout bool //`json:"soldout"`
     Obsoleteproduct bool //`json:"obsoleteproduct"`
     Deeplookup bool //`json:"deeplokup"`
-    
+
+    //Datetimes
+    LookupTimes []time.Time
 }
 
 
@@ -121,9 +125,14 @@ func GetProducts(url string,reg *regexp.Regexp,urlChan chan string,retryChan cha
                 }
             }
         }
+        b:=make([]time.Time,1,10)
+        b=[]time.Time{time.Now()}
+        m[iii].LookupTimes=b
         //fmt.Println(iii,"\n\n")
         //fmt.Println(val[1])
     }
+    b,_:=json.Marshal(m)
+    //fmt.Println(string(b))
     fmt.Println(url)
     fmt.Println(lenM)
     return 

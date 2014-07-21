@@ -2,11 +2,17 @@ package main
 
 
 import (
+	"flag"
+    elastigo "github.com/mattbaird/elastigo/lib"
     "regexp"
     "strconv"
     "sync"
     "github.com/Froskekongen/crawl_vp/crawlers"
     "fmt"
+)
+
+var (
+	eshost *string = flag.String("host", "172.30.31.203", "Elasticsearch Server Host Address")
 )
 
 
@@ -28,6 +34,12 @@ func main(){
 
     retry_url:=make(chan map[string]int,1)
     retry_url <- map[string]int{"base":1}
+
+    elastChan:=make(chan *elastigo.Conn,1)
+    c:= elastigo.NewConn()
+    c.Domain = *eshost
+    elastChan <- c
+    close(elastChan)
     
     // spawn four worker goroutines
     var wg sync.WaitGroup
