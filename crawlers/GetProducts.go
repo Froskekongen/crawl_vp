@@ -10,61 +10,36 @@ import (
     "html"
 )
 
-//type Fetcher interface {
-//    // Fetch returns the body of URL and
-//    // a slice of URLs found on that page.
-//    Fetch(url string) (body []byte, err error)
-//}
 
-
-//type crawlShared struct {
-//    mapAccess chan map[string]bool
-//    printAccess chan bool
-//}
-
-//func (cs *crawlShared) Fetch(url string) ([]byte,error){
-//    resp,err1:=http.Get(url)    
-//    defer resp.Body.Close()
-//    if err1!=nil{
-//        var b []byte
-//        return b,err1
-//    }
-//    body, err2 := ioutil.ReadAll(resp.Body)
-//    if err2!=nil{
-//        var b []byte
-//        return b,err2
-//    }
-//    return body,nil
-//}
 
 type WineRep struct{
     //strings
-    Url string `json:"url"`
-    Name string `json:"name"`
-    WineType string `json:"WineType"`
-    Producer string `json:"producer"`
-    Wholesaler string `json:"wholesaler"`
-    Material string `json:"material"`
-    Country string `json:"country"`
-    Subcountry1 string `json:"subcountry1"`
-    Subcountry2 string `json:"subcountry2"`
-    Store string `json:"store"`
+    Url string //`json:"url"`
+    Name string //`json:"name"`
+    WineType string //`json:"WineType"`
+    Producer string //`json:"producer"`
+    Wholesaler string //`json:"wholesaler"`
+    Material string //`json:"material"`
+    Country string //`json:"country"`
+    Subcountry1 string //`json:"subcountry1"`
+    Subcountry2 string //`json:"subcountry2"`
+    Store string //`json:"store"`
 
     //ints
-    Prodnum uint64 `json:"prodnum"`
-    Vintage uint64 `json:"vintage"`
-    Distributor uint64 `json:"distributor"`
+    Prodnum uint64 //`json:"prodnum"`
+    Vintage uint64 //`json:"vintage"`
+    Distributor uint64 //`json:"distributor"`
 
     //floats
-    Alcohol float64 `json:"alcohol"`
-    Sugar float64 `json:"sugar"`
-    Acid float64 `json:"acid"`
-    Price float64 `json:"price"`
+    Alcohol float64 //`json:"alcohol"`
+    Sugar float64 //`json:"sugar"`
+    Acid float64 //`json:"acid"`
+    Price float64 //`json:"price"`
 
     //Flags
-    Soldout bool `json:"soldout"`
-    Obsoleteproduct bool `json:"obsoleteproduct"`
-    Deeplookup bool `json:"deeplokup"`
+    Soldout bool //`json:"soldout"`
+    Obsoleteproduct bool //`json:"obsoleteproduct"`
+    Deeplookup bool //`json:"deeplokup"`
     
 }
 
