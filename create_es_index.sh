@@ -36,3 +36,4 @@ curl -XPUT 'http://172.30.31.203:9200/wines/product/_mapping' -d '{
         }
     }
 }'
+
