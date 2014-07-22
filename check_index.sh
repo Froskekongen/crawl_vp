@@ -1,7 +1,7 @@
 curl -XPUT 'http://172.30.31.203:9200/wines/product/89101' -d '{
     "Prodnum" : 89101,
     "Producer" : "Lanson Pére et Fils",
-    "Price" : 369
+    "Price" : [369]
 }'
 
 sleep 2s
