@@ -47,6 +47,7 @@ type WineRep struct{
 
     //Datetimes
     LookupTimes []time.Time
+    LastWritten time.Time
 }
 
 
@@ -78,6 +79,7 @@ func EsSearch(esConn chan *elastigo.Conn,prodNum uint64)(WineRep,bool){
         fmt.Println(err)
         return WineRep{},false
     }
+    esConn <- c
     if len(sResp.Hits.Hits) == 1{
         var wr WineRep
         err := json.Unmarshal(*sResp.Hits.Hits[0].Source, &wr)
@@ -93,8 +95,74 @@ func EsSearch(esConn chan *elastigo.Conn,prodNum uint64)(WineRep,bool){
     return WineRep{},false
 }
 
+func GetProductsWithES(url string,esConn chan *elastigo.Conn){
+    resp,err1:=http.Get(url)
+    defer resp.Body.Close()
+    if err1!=nil{
+        return
+    }
+    body, err2 := ioutil.ReadAll(resp.Body)
+    if err2!=nil{
+        return
+    }
+    reMatch:=productRegex.FindAllSubmatch(body,-1)
+    for _,m := range reMatch{
+        pn,err3:=strconv.ParseUint(string(m[4]),10,64)
+        if err3!=nil{
+            continue
+        }
+        wr,exists:=EsSearch(esConn,pn)
+        if exists{
+            fmt.Println("wine exists in es",wr.Name)
+            pf,err4:=strconv.ParseUint(string(m[5]),10,64)
+            if err4!=nil{
+                continue
+            }
+            if pf!=wr.Price[len(wr.Price)-1]{
+                wr.UpdatePrice(pf)
+                c:= <-esConn
+                wr.LastWritten=time.Now()
+                c.Index("wines","product",string(m[4]),nil,wr)
+                esConn <- c
+            }
+        } else {
+            wr=ParseOneMatch(&m)
+            c:= <-esConn
+            wr.LastWritten=time.Now()
+            c.Index("wines","product",string(m[4]),nil,wr)
+            esConn <- c
+        }
+    }
+    return   
+}
 
 
+func ParseOneMatch(val *[][]byte)WineRep{
+    var wr WineRep
+    for jjj,vv:=range *val{
+        if jjj!=0{
+            //fmt.Println(string(vv))
+            switch{
+                case jjj==1:
+                    wr.Url=string(vv)//+"?ShowShopsWithProdInStock=true&sku=1492601&fylke_id=*"
+                case jjj==2:
+                    wr.Name=html.UnescapeString(string(vv))
+                case jjj==3:
+                    wr.WineType=html.UnescapeString(string(vv))
+                case jjj==4:
+                    pf,_:=strconv.ParseUint(string(vv),10,64)
+                    //pf,_:=strconv.ParseUint("10",10,64)
+                    wr.Prodnum=pf
+                case jjj==5:
+                    //pf,_:=strconv.ParseFloat(string(vv),64)
+                    pf,_:=strconv.ParseUint(string(vv),10,64)
+                    wr.Price=[]uint64{pf}
+                    wr.LookupTimes=[]time.Time{time.Now()}
+            }
+        }
+    }
+    return wr
+}
 
 
 
@@ -102,34 +170,14 @@ func ParseRegexMatch(mts *[][][]byte,lenM int)[] WineRep{
     m:=make([]WineRep,lenM)
 
     for iii,val:=range *mts{
-        for jjj,vv:=range val{
-            if jjj!=0{
-                //fmt.Println(string(vv))
-                switch{
-                    case jjj==1:
-                        m[iii].Url=string(vv)//+"?ShowShopsWithProdInStock=true&sku=1492601&fylke_id=*"
-                    case jjj==2:
-                        m[iii].Name=html.UnescapeString(string(vv))
-                    case jjj==3:
-                        m[iii].WineType=html.UnescapeString(string(vv))
-                    case jjj==4:
-                        pf,_:=strconv.ParseUint(string(vv),10,64)
-                        //pf,_:=strconv.ParseUint("10",10,64)
-                        m[iii].Prodnum=pf
-                    case jjj==5:
-                        //pf,_:=strconv.ParseFloat(string(vv),64)
-                        pf,_:=strconv.ParseUint(string(vv),10,64)
-                        m[iii].Price=[]uint64{pf}
-                        m[iii].LookupTimes=[]time.Time{time.Now()}
-                }
-            }
-        }
+        wr:=ParseOneMatch(&val)
+        m[iii]=wr
     }
     return m
 }
 
 
-func GetProducts(url string,urlChan chan string,retryChan chan map[string]int) {
+func GetProducts(url string,retryChan chan map[string]int) {
 //    maxRetries:=5
     resp,err1:=http.Get(url)
     defer resp.Body.Close()
