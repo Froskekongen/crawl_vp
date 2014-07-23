@@ -95,7 +95,7 @@ func EsSearch(esConn chan *elastigo.Conn,prodNum uint64)(WineRep,bool){
     return WineRep{},false
 }
 
-func GetProductsWithES(url string,esConn chan *elastigo.Conn){
+func GetProductsWithES(url string,esConn chan *elastigo.Conn,changedChan chan *[]WineRep,newChan chan *[]WineRep){
     resp,err1:=http.Get(url)
     defer resp.Body.Close()
     if err1!=nil{
@@ -124,6 +124,10 @@ func GetProductsWithES(url string,esConn chan *elastigo.Conn){
                 wr.LastWritten=time.Now()
                 c.Index("wines","product",string(m[4]),nil,wr)
                 esConn <- c
+
+                change:= <- changedChan
+                //change=append(*change,wr) //troublesome line
+                changedChan <- change
             }
         } else {
             wr=ParseOneMatch(&m)

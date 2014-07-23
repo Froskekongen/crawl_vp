@@ -32,6 +32,13 @@ func main(){
 
     tasks := make(chan string,1000)
 
+    changedChan:=make(chan *[]crawl_vp.WineRep,1)
+    newChan:=make(chan *[]crawl_vp.WineRep,1)
+    cW:=make([]crawl_vp.WineRep,0,1000)
+    nW:=make([]crawl_vp.WineRep,0,1000)
+    changedChan <- &cW
+    newChan <- &nW
+
 
 
 
@@ -69,7 +76,7 @@ func main(){
         wg.Add(1)
         go func() {
             for url := range tasks {
-                crawl_vp.GetProductsWithES(url,elastChan)
+                crawl_vp.GetProductsWithES(url,elastChan,changedChan,newChan)
             }
             wg.Done()
         }()
