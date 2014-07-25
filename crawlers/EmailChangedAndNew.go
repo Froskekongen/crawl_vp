@@ -9,7 +9,7 @@ import(
     "encoding/json"
     "strconv"
     "time"
-    //"sort"
+    "sort"
 )
 
 type EmailUser struct {
@@ -38,11 +38,11 @@ Sincerely,
 {{.From}}
 `
 
-func SendChangedAndNew(changedWines []WineRep,newWines []WineRep){
+func SendChangedAndNew(changedWines ListOfWines,newWines ListOfWines){
     var doc bytes.Buffer 
     var err error   
     fmt.Println("Jeg er kuul")
-    emailUser:=&EmailUser{Username:"crawlbeerandwine@gmail.com",Password:"XXX", // change password to make it work
+    emailUser:=&EmailUser{Username:"crawlbeerandwine@gmail.com",Password:"CrawlBonanza", // change password to make it work
         EmailServer:"smtp.gmail.com",Port:587}
     auth := smtp.PlainAuth("",
       emailUser.Username,
@@ -56,8 +56,10 @@ func SendChangedAndNew(changedWines []WineRep,newWines []WineRep){
       log.Print("error trying to parse mail template")
     }
 
-    b1,_:=json.Marshal(changedWines)
-    b2,_:=json.Marshal(newWines)
+    sort.Sort(changedWines)
+
+    b1,_:=json.MarshalIndent(changedWines,"","  ")
+    b2,_:=json.MarshalIndent(newWines,"","  ")
     chW:=string(b1)
     nW:=string(b2)
     bdy:="Viner med prisforandring:\n\n"+chW+"\n\n\n\n\n\n\n\n\n\nNye viner:\n\n"+nW

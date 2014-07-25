@@ -15,51 +15,11 @@ import (
 
 
 
-type WineRep struct{
-    //strings
-    Url string //`json:"url"`
-    Name string //`json:"name"`
-    WineType string //`json:"WineType"`
-    Producer string //`json:"producer"`
-    Wholesaler string //`json:"wholesaler"`
-    Material string //`json:"material"`
-    Country string //`json:"country"`
-    Subcountry1 string //`json:"subcountry1"`
-    Subcountry2 string //`json:"subcountry2"`
-    Store string //`json:"store"`
-    Distributor string //`json:"distributor"`
 
-    //ints
-    Prodnum uint64 //`json:"prodnum"`
-    Vintage uint16 //`json:"vintage"`
-    Price []uint64 //`json:"price"` // change to uint64
-
-    //floats
-    Alcohol float64 //`json:"alcohol"`
-    Sugar float64 //`json:"sugar"`
-    Acid float64 //`json:"acid"`
-    
-
-    //Flags
-    Soldout bool //`json:"soldout"`
-    Obsoleteproduct bool //`json:"obsoleteproduct"`
-    Deeplookup bool //`json:"deeplokup"`
-
-    //Datetimes
-    LookupTimes []time.Time
-    LastWritten time.Time
-}
-
-
-func (wr *WineRep)UpdatePrice(px uint64){
-//    timeN:=len(wr.LookupTimes)
-//    priceN:=len(wr.Price)
-    wr.LookupTimes=append(wr.LookupTimes,time.Now())
-    wr.Price=append(wr.Price,px)
-}
 
 
 var productRegex *regexp.Regexp = regexp.MustCompile(`<a href="([\w\:\-/\.]+).*?" class="product">(.+)</a>\s*</h3>\s*<p>\s*(\S*\s?\S*\s?\S*\s?\S*)\s*\((\d+)\)(?s:.*?)<strong>Kr\.\s+(\d*\.?\d*).*?\s+</strong>`)
+//var productRegex *regexp.Regexp = regexp.MustCompile(`<a href="([\w\:\-/\.]+).*?" class="product">(.+)</a>\s*</h3>\s*<p>\s*(\S*\s?\S*\s?\S*\s?\S*)\s*\((\d+)\)(?s:.*?)<strong>Kr\.\s+(\d*\.?\d*).*?\s+</strong>(?s:.*?)<h3 class="stock">([.\s]*?)<`)
 
 
 func EsSearch(esConn chan *elastigo.Conn,prodNum uint64)(WineRep,bool){
@@ -95,7 +55,7 @@ func EsSearch(esConn chan *elastigo.Conn,prodNum uint64)(WineRep,bool){
     return WineRep{},false
 }
 
-func GetProductsWithES(url string,esConn chan *elastigo.Conn,changedChan chan *[]WineRep,newChan chan *[]WineRep){
+func GetProductsWithES(url string,esConn chan *elastigo.Conn,changedChan chan ListOfWines,newChan chan ListOfWines){
     resp,err1:=http.Get(url)
     defer resp.Body.Close()
     if err1!=nil{
@@ -126,7 +86,7 @@ func GetProductsWithES(url string,esConn chan *elastigo.Conn,changedChan chan *[
                 esConn <- c
 
                 change:= <- changedChan
-                //change=append(*change,wr) //troublesome line
+                change=append(change,wr) //troublesome line
                 changedChan <- change
             }
         } else {
@@ -135,6 +95,10 @@ func GetProductsWithES(url string,esConn chan *elastigo.Conn,changedChan chan *[
             wr.LastWritten=time.Now()
             c.Index("wines","product",string(m[4]),nil,wr)
             esConn <- c
+
+            newWR:= <- newChan
+            newWR=append(newWR,wr) //troublesome line
+            changedChan <- newWR
         }
     }
     return   

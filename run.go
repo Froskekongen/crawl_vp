@@ -5,11 +5,13 @@ import (
 	"flag"
     elastigo "github.com/mattbaird/elastigo/lib"
     //"regexp"
-    "strconv"
+    //"strconv"
     "sync"
+    //"github.com/Froskekongen/crawl_vp/crawlers"
     "github.com/Froskekongen/crawl_vp/crawlers"
-    "fmt"
+    //"fmt"
     //"time"
+    //"encoding/json"
 )
 
 var (
@@ -22,22 +24,19 @@ func main(){
   
 
     mapPages:=crawl_vp.GetNPages()
+    maxPPerType:=1
 
-    base1:="http://www.vinmonopolet.no/vareutvalg/sok?query=*&sort=2&sortMode=0&page="
-    base2:="&filterIds=25&filterValues="
-    //wineTypes:=[]string{"R%C3%B8dvin","Musserende+vin","Hvitvin","Ros%C3%A9vin","Fruktvin","Sterkvin","Brennevin","%C3%B8l"}
-    maxPPerType:=10000
-    
-    
 
     tasks := make(chan string,1000)
 
-    changedChan:=make(chan *[]crawl_vp.WineRep,1)
-    newChan:=make(chan *[]crawl_vp.WineRep,1)
-    cW:=make([]crawl_vp.WineRep,0,1000)
-    nW:=make([]crawl_vp.WineRep,0,1000)
-    changedChan <- &cW
-    newChan <- &nW
+    changedChan:=make(chan crawl_vp.ListOfWines,1)
+    newChan:=make(chan crawl_vp.ListOfWines,1)
+    cw := make([]crawl_vp.WineRep,0,100)
+    cW := crawl_vp.ListOfWines(cw)
+    nw := make([]crawl_vp.WineRep,0,100)
+    nW := crawl_vp.ListOfWines(nw)
+    changedChan <- cW
+    newChan <- nW
 
 
 
@@ -52,27 +51,17 @@ func main(){
     crawl_vp.TestIndex1(c)
     crawl_vp.TestIndex2(c)
     elastChan <- c
-    wr,_:=crawl_vp.EsSearch(elastChan,89101)
-    fmt.Println(wr)
-    wr.UpdatePrice(200)
-    fmt.Println(wr)
+//    wr,_:=crawl_vp.EsSearch(elastChan,89101)
+//    fmt.Println(wr)
+//    wr.UpdatePrice(200)
+//    fmt.Println(wr)
 
     
     
     // spawn four worker goroutines
     var wg sync.WaitGroup
 
-//    for i := 0; i < 4; i++ {
-//        wg.Add(1)
-//        go func() {
-//            for url := range tasks {
-//                crawl_vp.GetProducts(url,retry_url)
-//            }
-//            wg.Done()
-//        }()
-//    }
-
-    for i := 0; i < 4; i++ {
+    for i := 0; i < 6; i++ {
         wg.Add(1)
         go func() {
             for url := range tasks {
@@ -82,21 +71,22 @@ func main(){
         }()
     }
 
-    // generate some tasks
-    kkk:=0
-    for key,val:=range mapPages{
-        for iii:=1;iii<=val;iii++{
-            ss:=base1+strconv.Itoa(iii)+base2+key
-            kkk++
-            fmt.Println(kkk,ss)
-            tasks <- ss
-            if iii>maxPPerType{break}
-        }
-    }
+    crawl_vp.GenerateTasks(mapPages,tasks,maxPPerType)
     
     
     close(tasks)
     wg.Wait()
     close(elastChan)
+
+    newWines:= <- newChan
+    changedWines:= <-changedChan
+
+    if len(newWines)>0 || len(changedWines)>0{
+        crawl_vp.SendChangedAndNew(changedWines,newWines)
+    }
+
+    close(newChan)
+    close(changedChan)
+
     
 }
