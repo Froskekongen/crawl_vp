@@ -58,6 +58,7 @@ func EsSearch(esConn chan *elastigo.Conn,prodNum uint64)(WineRep,bool){
 func GetProductsWithES(url string,esConn chan *elastigo.Conn,changedChan chan ListOfWines,newChan chan ListOfWines){
     resp,err1:=http.Get(url)
     defer resp.Body.Close()
+    fmt.Println(url,'\n')
     if err1!=nil{
         return
     }
