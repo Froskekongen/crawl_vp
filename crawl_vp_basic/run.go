@@ -78,15 +78,15 @@ func main(){
     wg.Wait()
     close(elastChan)
 
-    newWines:= <- newChan
-    changedWines:= <-changedChan
+//    newWines:= <- newChan
+//    changedWines:= <-changedChan
 
-    if len(newWines)>0 || len(changedWines)>0{
-        crawl_vp.SendChangedAndNew(changedWines,newWines)
-    }
+//    if len(newWines)>0 || len(changedWines)>0{
+//        crawl_vp.SendChangedAndNew(changedWines,newWines)
+//    }
 
-    close(newChan)
-    close(changedChan)
+//    close(newChan)
+//    close(changedChan)
 
     
 }

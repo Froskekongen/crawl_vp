@@ -100,7 +100,7 @@ func DeepLookupRegex(url string,wr *WineRep){
             continue        
         } else {
             mtch=strings.TrimSpace( html.UnescapeString(string(mtch_[1])) )
-            fmt.Println(mtch)
+            //fmt.Println(mtch)
         }
         _,ok1=decimalMap[key]
         _,ok2=intMap[key]
@@ -153,7 +153,7 @@ func EsScanForDeep(esConn chan *elastigo.Conn){
 
     wg:= new(sync.WaitGroup)
 
-    for i := 0; i < 6; i++ {
+    for i := 0; i < 20; i++ {
         wg.Add(1)
         go UpdateWineRep(tasks,wg,esConn)
     }
