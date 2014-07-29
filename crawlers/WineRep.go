@@ -13,15 +13,14 @@ type WineRep struct{
     Wholesaler string //`json:"wholesaler"`
     Material string //`json:"material"`
     Country string //`json:"country"`
-    Subcountry1 string //`json:"subcountry1"`
-    Subcountry2 string //`json:"subcountry2"`
+    Subcountry string //`json:"subcountry1"`
     Store string //`json:"store"`
     Distributor string //`json:"distributor"`
     Selection string
 
     //ints
     Prodnum uint64 //`json:"prodnum"`
-    Vintage uint16 //`json:"vintage"`
+    Vintage uint64 //`json:"vintage"`
     Price []uint64 //`json:"price"` // change to uint64
 
     //floats

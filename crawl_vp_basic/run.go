@@ -24,17 +24,17 @@ func main(){
   
 
     mapPages:=crawl_vp.GetNPages()
-    maxPPerType:=1
+    maxPPerType:=100000
 
 
     tasks := make(chan string,1000)
 
     changedChan:=make(chan crawl_vp.ListOfWines,1)
     newChan:=make(chan crawl_vp.ListOfWines,1)
-    cw := make([]crawl_vp.WineRep,0,100)
-    cW := crawl_vp.ListOfWines(cw)
-    nw := make([]crawl_vp.WineRep,0,100)
-    nW := crawl_vp.ListOfWines(nw)
+    cW := crawl_vp.ListOfWines( make([]crawl_vp.WineRep,0,100) )
+    //cW := crawl_vp.ListOfWines(cw)
+    nW := crawl_vp.ListOfWines( make([]crawl_vp.WineRep,0,100) )
+    //nW := crawl_vp.ListOfWines(nw)
     changedChan <- cW
     newChan <- nW
 
