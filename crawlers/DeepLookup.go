@@ -133,11 +133,7 @@ func DeepLookupRegex(url string,wr *WineRep){
 func EsScanForDeep(esConn chan *elastigo.Conn){
     searchJson := `{
         "query": {
-            "filtered": {
-                "filter": {
-                    "term": {"Deeplookup":false}
-                }
-            }
+            "term":{"Name":""}
         }
     }`
     sargs:=map[string]interface{} { "search_type" : `scan`, `scroll`:`20m`}
