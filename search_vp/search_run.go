@@ -115,6 +115,8 @@ func ParseResponse(rp *elastigo.Hits) string{
         str = str + fmt.Sprintf(`<font size="4">Producer: %v</font>`,wr.Producer) +"<br></br>"
         str = str + fmt.Sprintf(`<font size="4">Vintage: %v</font>`,wr.Vintage) +"<br></br>"
         str = str + fmt.Sprintf(`<font size="4">Price: %v</font>`,wr.Price) +"<br></br>"
+        str = str + fmt.Sprintf(`<font size="4">Alcohol: %v, Acid: %v g/l, Sugar: %v g/l</font>`,wr.Alcohol,wr.Acid,wr.Sugar) +"<br></br>"
+
         str = str + fmt.Sprintf(`<font size="4"><a href="https://www.google.com/search?q=%v+site:cellartracker.com">Search on cellartracker</a></font>`,wr.Name) +"<br></br>"
         str = str + fmt.Sprintf(`<font size="4"><a href="http://www.vivino.com/search?q=%v+site:cellartracker.com">Search on vivino</a></font>`,wr.Name) +"<br></br>"
 
