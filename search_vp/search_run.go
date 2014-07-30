@@ -62,7 +62,7 @@ func searchHandler(w http.ResponseWriter, r *http.Request) {
 
 func searchResultHandler(w http.ResponseWriter, r *http.Request) {  
 
-    w.Header().Set("Content-Type", "application/json")
+    //w.Header().Set("Content-Type", "application/json")
     Name := r.FormValue("Name")
     c:= elastigo.NewConn()
     var eshost *string = flag.String("host", "172.30.31.203", "Elasticsearch Server Host Address")
@@ -106,8 +106,22 @@ func ParseResponse(rp *elastigo.Hits) string{
     for iii,hh :=range rp.Hits{
         json.Unmarshal(*hh.Source,&wrs[iii])
     }
-    bb,_:=json.MarshalIndent(wrs,"","  ")
-    return string(bb)
+//    bb,_:=json.MarshalIndent(wrs,"","  ")
+    str:=""
+    var temp string    
+    for _,wr := range wrs{
+        temp=fmt.Sprintf(`<font size="5">Name:<a href="%v+?HideDropdownIfNotInStock=true&ShowShopsWithProdInStock=true" STYLE="text-decoration: none"> %v</a></font>`,wr.Url,wr.Name)
+        str=str+temp+"<br></br>"
+        str = str + fmt.Sprintf(`<font size="4">Producer: %v</font>`,wr.Producer) +"<br></br>"
+        str = str + fmt.Sprintf(`<font size="4">Vintage: %v</font>`,wr.Vintage) +"<br></br>"
+        str = str + fmt.Sprintf(`<font size="4">Price: %v</font>`,wr.Price) +"<br></br>"
+        str = str + fmt.Sprintf(`<font size="4"><a href="https://www.google.com/search?q=%v+site:cellartracker.com">Search on cellartracker</a></font>`,wr.Name) +"<br></br>"
+        str = str + fmt.Sprintf(`<font size="4"><a href="http://www.vivino.com/search?q=%v+site:cellartracker.com">Search on vivino</a></font>`,wr.Name) +"<br></br>"
+
+
+        str=str+"<br></br><br></br>"
+    }
+    return str
 }
 
 
