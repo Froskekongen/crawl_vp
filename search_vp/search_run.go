@@ -16,6 +16,7 @@ import (
     "fmt"
     "encoding/json"
     "github.com/Froskekongen/crawl_vp/crawlers"
+    //"strconv"
 )
 
 var (
@@ -59,37 +60,59 @@ func searchHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 
-
+var eshost *string = flag.String("host", "172.30.31.203", "Elasticsearch Server Host Address")
 func searchResultHandler(w http.ResponseWriter, r *http.Request) {  
 
     //w.Header().Set("Content-Type", "application/json")
     Name := r.FormValue("Name")
     c:= elastigo.NewConn()
-    var eshost *string = flag.String("host", "172.30.31.203", "Elasticsearch Server Host Address")
+    
     c.Domain = *eshost
     sargs:=map[string]interface{} {`scroll`:`20m`}
     searchJson:=`{
         "query": {
-            "term":{"Name":"%v"}
-        }
+            "match":{"Name":"%v"}
+        },
+        "size":100
     }`
     searchJson = fmt.Sprintf(searchJson,Name)
+
+//    sResp,err:=c.Search("wines","product",nil,searchJson)
+//    if err!=nil{
+//        log.Println(err)
+//    }
+
     sResp,err:=c.Search("wines","product",sargs,searchJson)
     if err!=nil{
         log.Println(err)
     }
-    
-    
-    sResp,err = c.Scroll(sargs,sResp.ScrollId)
-    if err!=nil{
-        log.Println(err)
+
+    Nhits:=0
+    wrs:=make([]crawl_vp.WineRep,0,300)
+    var wrsTemp []crawl_vp.WineRep    
+    for{
+        Nhits=Nhits+len(sResp.Hits.Hits)
+        //fmt.Println("Hits:",sResp.Hits.Total)
+        if err!=nil{
+            log.Println(err)
+            break
+        }
+        if len(sResp.Hits.Hits)==0{
+            break
+        }
+        wrsTemp=MakeWrs(&sResp.Hits)
+        wrs=append(wrs,wrsTemp...)
+        sResp,err = c.Scroll(sargs,sResp.ScrollId)
     }
+
+    outStr:=ParseResponse(wrs)
+    outStr = fmt.Sprintf(`<font size="4">N hits: %v</font>`,Nhits) +"<br></br>"+outStr
 
 //    var wr crawl_vp.WineRep
 //    json.Unmarshal(*sResp.Hits.Hits[0].Source, &wr)
 //    OneResp,_:=json.MarshalIndent(wr,"","  ")
     //hitJson := json.MarshalIndent(sResp.Hits.Hits[:].Source,"","  ")
-    fmt.Fprint(w, ParseResponse(&sResp.Hits))
+    fmt.Fprint(w, outStr)
 //	if err != nil {
 //		http.Redirect(w, r, "/search/", http.StatusFound)
 //		return
@@ -101,11 +124,22 @@ func searchResultHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 
-func ParseResponse(rp *elastigo.Hits) string{
+func MakeWrs(rp *elastigo.Hits) []crawl_vp.WineRep{
     wrs:=make([]crawl_vp.WineRep,len(rp.Hits))
     for iii,hh :=range rp.Hits{
         json.Unmarshal(*hh.Source,&wrs[iii])
     }
+    return wrs
+}
+
+
+
+
+func ParseResponse(wrs []crawl_vp.WineRep) string{
+//    wrs:=make([]crawl_vp.WineRep,len(rp.Hits))
+//    for iii,hh :=range rp.Hits{
+//        json.Unmarshal(*hh.Source,&wrs[iii])
+//    }
 //    bb,_:=json.MarshalIndent(wrs,"","  ")
     str:=""
     var temp string    
@@ -113,12 +147,16 @@ func ParseResponse(rp *elastigo.Hits) string{
         temp=fmt.Sprintf(`<font size="5">Name:<a href="%v+?HideDropdownIfNotInStock=true&ShowShopsWithProdInStock=true" STYLE="text-decoration: none"> %v</a></font>`,wr.Url,wr.Name)
         str=str+temp+"<br></br>"
         str = str + fmt.Sprintf(`<font size="4">Producer: %v</font>`,wr.Producer) +"<br></br>"
+        str = str + fmt.Sprintf(`<font size="4">Country: %v</font>`,wr.Country) +"<br></br>"
+        str = str + fmt.Sprintf(`<font size="4">Region: %v</font>`,wr.Subcountry) +"<br></br>"
         str = str + fmt.Sprintf(`<font size="4">Vintage: %v</font>`,wr.Vintage) +"<br></br>"
         str = str + fmt.Sprintf(`<font size="4">Price: %v</font>`,wr.Price) +"<br></br>"
         str = str + fmt.Sprintf(`<font size="4">Alcohol: %v, Acid: %v g/l, Sugar: %v g/l</font>`,wr.Alcohol,wr.Acid,wr.Sugar) +"<br></br>"
 
-        str = str + fmt.Sprintf(`<font size="4"><a href="https://www.google.com/search?q=%v+site:cellartracker.com">Search on cellartracker</a></font>`,wr.Name) +"<br></br>"
+        str = str + fmt.Sprintf(`<font size="4"><a href="https://www.google.com/search?q=%v+site:cellartracker.com">Search on cellartracker</a></font>`,wr.Name) +fmt.Sprintf(` <font size="4"><a href="https://www.google.com/search?q=%v+%v+site:cellartracker.com">(with producer)</a></font>`,wr.Name,wr.Producer) +"\t---\t"
         str = str + fmt.Sprintf(`<font size="4"><a href="http://www.vivino.com/search?q=%v+site:cellartracker.com">Search on vivino</a></font>`,wr.Name) +"<br></br>"
+        str = str + fmt.Sprintf(`<font size="4"><a href="https://www.google.com/search?q=%v+site:ratebeer.com">Search on RateBeer</a></font>`,wr.Name) +"\t---\t"
+        str = str + fmt.Sprintf(`<font size="4"><a href="https://www.google.com/search?q=%v+site:beeradvocate.com">Search on BeerAdvocate</a></font>`,wr.Name) +"<br></br>"
 
 
         str=str+"<br></br><br></br>"

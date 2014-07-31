@@ -11,6 +11,7 @@ import (
     "time"
     "encoding/json"
     elastigo "github.com/mattbaird/elastigo/lib"
+    "strings"
 )
 
 
@@ -61,7 +62,7 @@ func EsSearch(esConn chan *elastigo.Conn,prodNum uint64)(WineRep,bool){
 func GetProductsWithES(url string,esConn chan *elastigo.Conn,changedChan chan ListOfWines,newChan chan ListOfWines){
     resp,err1:=http.Get(url)
     defer resp.Body.Close()
-    fmt.Println(url+"\n")
+    //fmt.Println(url+"\n")
     if err1!=nil{
         return
     }
@@ -70,6 +71,8 @@ func GetProductsWithES(url string,esConn chan *elastigo.Conn,changedChan chan Li
         return
     }
     reMatch:=productRegex.FindAllSubmatch(body,-1)
+
+    var priceString string
     for _,m := range reMatch{
         pn,err3:=strconv.ParseUint(string(m[4]),10,64)
         if err3!=nil{
@@ -77,16 +80,20 @@ func GetProductsWithES(url string,esConn chan *elastigo.Conn,changedChan chan Li
         }
         wr,exists:=EsSearch(esConn,pn)
         if exists{
-            fmt.Println("wine exists in es",wr.Name)
-            pf,err4:=strconv.ParseUint(string(m[5]),10,64)
+            
+            priceString = string(m[5])
+            priceString = strings.Replace(priceString,".","",-1) // these are new changes. Not sure to work
+            pf,err4:=strconv.ParseUint(priceString,10,64)
             if err4!=nil{
                 continue
             }
             if pf!=wr.Price[len(wr.Price)-1]{
+                //fmt.Println("wine exists in es and has changed price",wr.Name)
                 wr.UpdatePrice(pf)
+                fmt.Println("wine exists in es and has changed price %+v",wr)
                 c:= <-esConn
                 wr.LastWritten=time.Now()
-                c.Index("wines","product",string(m[4]),nil,wr)
+                c.Index("wines","product",string(wr.Prodnum),nil,wr)
                 esConn <- c
 
                 change:= <- changedChan

@@ -16,8 +16,8 @@
 
 
 
-curl -XGET 'http://172.30.31.203:9200/wines/_search?pretty' -d '{
+curl -XGET 'http://172.30.31.203:9200/wines/product/_search?pretty' -d '{
         "query": {
-            "term":{"Name":"barbera"}
+            "term":{"Name":"dame"}
         }
     }'
