@@ -58,7 +58,9 @@ func (wr *WineRep)UpdatePrice(px uint64){
         wr.Price=append(wr.Price,px)
     }
     if len(wr.Price)>1{
-        wr.LastRelativePriceDifference=float64(wr.Price[len(wr.Price)-1])/float64(wr.Price[len(wr.Price)-2])
+        if wr.Price[len(wr.Price)-2]!=0{
+            wr.LastRelativePriceDifference=float64(wr.Price[len(wr.Price)-1])/float64(wr.Price[len(wr.Price)-2])
+        }
     }
 }
 

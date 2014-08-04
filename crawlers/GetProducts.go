@@ -12,6 +12,7 @@ import (
     "encoding/json"
     elastigo "github.com/mattbaird/elastigo/lib"
     "strings"
+    "log"
 )
 
 
@@ -20,7 +21,9 @@ import (
 
 
 //var productRegex *regexp.Regexp = regexp.MustCompile(`<a href="([\w\:\-/\.]+).*?" class="product">(.+)</a>\s*</h3>\s*<p>\s*(\S*\s?\S*\s?\S*\s?\S*)\s*\((\d+)\)(?s:.*?)<strong>Kr\.\s+(\d*\.?\d*).*?\s+</strong>`) //this works
-var productRegex *regexp.Regexp = regexp.MustCompile(`<a href="([\w\:\-/\.]+).*?" class="product">(.+)</a>\s*</h3>\s*<p>\s*(\S*\s?\S*\s?\S*\s?\S*)\s*\((\d+)\)(?s:.*?)<strong>Kr\.?\s*(\d*\.?\d*)`)
+//var productRegex *regexp.Regexp = regexp.MustCompile(`<a href="([\w\:\-/\.]+).*?" class="product">(.+)</a>\s*</h3>\s*<p>\s*(\S*\s?\S*\s?\S*\s?\S*)\s*\((\d+)\)(?s:.*?)<strong>Kr\.?\s*(\d*\.?\d*)`)
+
+var productRegex *regexp.Regexp = regexp.MustCompile(`<a href="([\w\:\-/\.]+).*?" class="product">(.+)</a>\s*</h3>\s*<p>\s*(\S*\s?\S*\s?\S*\s?\S*)\s*\((\d+)\)(?s:.*?)<strong>Kr\.?\s*(\d*\.?\d*)(?s:.*?)<h3\s*class="stock">\s*(.*?)\s*</h3>`)
 
 
 //var productRegex *regexp.Regexp = regexp.MustCompile(`<a href="([\w\:\-/\.]+).*?" class="product">(.+)</a>\s*</h3>\s*<p>\s*(\S*\s?\S*\s?\S*\s?\S*)\s*\((\d+)\)(?s:.*?)<strong>Kr\.\s+(\d*\.?\d*).*?\s+</strong>(?s:.*?)<h3 class="stock">([.\s]*?)<`)
@@ -60,22 +63,25 @@ func EsSearch(esConn chan *elastigo.Conn,prodNum uint64)(WineRep,bool){
 }
 
 func GetProductsWithES(url string,esConn chan *elastigo.Conn,changedChan chan ListOfWines,newChan chan ListOfWines){
-    resp,err1:=http.Get(url)
+    //var baseResp elastigo.BaseResponse
+    var err error    
+
+    resp,err:=http.Get(url)
     defer resp.Body.Close()
     //fmt.Println(url+"\n")
-    if err1!=nil{
+    if err!=nil{
         return
     }
-    body, err2 := ioutil.ReadAll(resp.Body)
-    if err2!=nil{
+    body, err := ioutil.ReadAll(resp.Body)
+    if err!=nil{
         return
     }
     reMatch:=productRegex.FindAllSubmatch(body,-1)
 
     var priceString string
     for _,m := range reMatch{
-        pn,err3:=strconv.ParseUint(string(m[4]),10,64)
-        if err3!=nil{
+        pn,err:=strconv.ParseUint(string(m[4]),10,64)
+        if err!=nil{
             continue
         }
         wr,exists:=EsSearch(esConn,pn)
@@ -83,18 +89,28 @@ func GetProductsWithES(url string,esConn chan *elastigo.Conn,changedChan chan Li
             
             priceString = string(m[5])
             priceString = strings.Replace(priceString,".","",-1) // these are new changes. Not sure to work
-            pf,err4:=strconv.ParseUint(priceString,10,64)
-            if err4!=nil{
+            pf,err:=strconv.ParseUint(priceString,10,64)
+            if err!=nil{
                 continue
             }
             if pf!=wr.Price[len(wr.Price)-1]{
                 //fmt.Println("wine exists in es and has changed price",wr.Name)
                 wr.UpdatePrice(pf)
-                fmt.Println("wine exists in es and has changed price %+v",wr)
+                fmt.Println("wine exists in es and has changed price ",wr)
                 c:= <-esConn
                 wr.LastWritten=time.Now()
-                c.Index("wines","product",string(wr.Prodnum),nil,wr)
+                //_,err=c.Update("wines","product",string(wr.Prodnum),nil,wr)
+                _,err=c.Delete("wines","product",string(m[4]),nil)
+                if err!=nil{
+                    log.Println("\n",err,"\n\n")
+                }
+                _,err=c.Index("wines","product",string(m[4]),nil,wr)
+                if err!=nil{
+                    log.Println("\n",err,"\n\n")
+                }
+
                 esConn <- c
+
 
                 change:= <- changedChan
                 change=append(change,wr) //troublesome line
@@ -137,10 +153,22 @@ func ParseOneMatch(val *[][]byte)WineRep{
                     pf,_:=strconv.ParseUint(string(vv),10,64)
                     wr.Price=[]uint64{pf}
                     wr.LookupTimes=[]time.Time{time.Now()}
+                case jjj==6:
+                    ParseBehStatus(string(vv),&wr)
             }
         }
     }
     return wr
+}
+
+func ParseBehStatus(m string,wr *WineRep){
+    m=html.UnescapeString(m)
+    if strings.Contains(m,"Utgått fra sortimentet"){
+        wr.Obsoleteproduct=true
+    }
+    if strings.Contains(m,"Utsolgt fra leverandør"){
+        wr.Soldout=true
+    }
 }
 
 

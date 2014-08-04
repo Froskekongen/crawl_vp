@@ -17,6 +17,8 @@ import (
     "encoding/json"
     "github.com/Froskekongen/crawl_vp/crawlers"
     //"strconv"
+    "strings"
+    "os"
 )
 
 var (
@@ -63,24 +65,74 @@ func searchHandler(w http.ResponseWriter, r *http.Request) {
 var eshost *string = flag.String("host", "172.30.31.203", "Elasticsearch Server Host Address")
 func searchResultHandler(w http.ResponseWriter, r *http.Request) {  
 
+    queries:=make([]string,0,5)
+    stringMustMatch:=make(map[string]string,10)
+    stringShouldMatch:=make(map[string]string,10)
     //w.Header().Set("Content-Type", "application/json")
-    Name := r.FormValue("Name")
+    if r.FormValue("Name")!=""{
+        stringMustMatch["Name"]=r.FormValue("Name")
+    }
+    if r.FormValue("Producer")!=""{
+        stringMustMatch["Producer"]=r.FormValue("Producer")
+    }
+    if r.FormValue("Country")!=""{
+        stringMustMatch["Country"]=r.FormValue("Country")
+    }
+    if r.FormValue("Subcountry")!=""{
+        stringMustMatch["Subcountry"]=r.FormValue("Subcountry")
+    }
+    if r.FormValue("WineType")!=""{
+        stringMustMatch["WineType"]=r.FormValue("WineType")
+    }
+    
+    if r.FormValue("Material")!=""{
+        stringShouldMatch["Material"]=r.FormValue("Material")
+    }
+    
+    var tString string
+    if len(stringMustMatch)>0{
+        tString=""
+        for key,val:=range stringMustMatch{
+            tString=tString+fmt.Sprintf(`{ "match": { "%v": "%v" }},`,key,val)
+        }
+        tString=`"must":[`+tString[:len(tString)-1]+"]"
+        queries=append(queries,tString)
+    }
+
+    if len(stringShouldMatch)>0{
+        tString=""
+        for key,val:=range stringShouldMatch{
+            tString=tString+fmt.Sprintf(`{ "match": { "%v": "%v" }},`,key,val)
+        }
+        tString=`"should":[`+tString[:len(tString)-1]+"]"
+        queries=append(queries,tString)
+    }
+    
     c:= elastigo.NewConn()
     
     c.Domain = *eshost
     sargs:=map[string]interface{} {`scroll`:`20m`}
-    searchJson:=`{
-        "query": {
-            "match":{"Name":"%v"}
-        },
-        "size":100
-    }`
-    searchJson = fmt.Sprintf(searchJson,Name)
 
-//    sResp,err:=c.Search("wines","product",nil,searchJson)
-//    if err!=nil{
-//        log.Println(err)
-//    }
+//    searchJson:=`{
+//    "query":
+//        {
+//            "bool": {
+//                "must":     [{ "match": { "Name": "%v" }},{ "match": { "Producer": "%v" }}]
+//            }
+//        }
+//    }`
+    
+    query:=strings.Join(queries,",\n")
+    searchJson:=`{
+    "query":
+        {
+            "bool": {
+                    %v
+            }
+        }
+    }`
+    searchJson = fmt.Sprintf(searchJson,query)
+    log.Println("ESQuery:"+"("+searchJson+")")
 
     sResp,err:=c.Search("wines","product",sargs,searchJson)
     if err!=nil{
@@ -144,14 +196,14 @@ func ParseResponse(wrs []crawl_vp.WineRep) string{
     str:=""
     var temp string    
     for _,wr := range wrs{
-        temp=fmt.Sprintf(`<font size="5">Name:<a href="%v+?HideDropdownIfNotInStock=true&ShowShopsWithProdInStock=true" STYLE="text-decoration: none"> %v</a></font>`,wr.Url,wr.Name)
+        temp=fmt.Sprintf(`<font size="5"><a href="%v+?HideDropdownIfNotInStock=true&ShowShopsWithProdInStock=true" STYLE="text-decoration: none"> %v</a></font>`,wr.Url,wr.Name)
         str=str+temp+"<br></br>"
-        str = str + fmt.Sprintf(`<font size="4">Producer: %v</font>`,wr.Producer) +"<br></br>"
-        str = str + fmt.Sprintf(`<font size="4">Country: %v</font>`,wr.Country) +"<br></br>"
+        str = str + fmt.Sprintf(`<font size="4">Produsent: %v</font>`,wr.Producer) +"<br></br>"
+        str = str + fmt.Sprintf(`<font size="4">Land: %v</font>`,wr.Country) +"<br></br>"
         str = str + fmt.Sprintf(`<font size="4">Region: %v</font>`,wr.Subcountry) +"<br></br>"
-        str = str + fmt.Sprintf(`<font size="4">Vintage: %v</font>`,wr.Vintage) +"<br></br>"
-        str = str + fmt.Sprintf(`<font size="4">Price: %v</font>`,wr.Price) +"<br></br>"
-        str = str + fmt.Sprintf(`<font size="4">Alcohol: %v, Acid: %v g/l, Sugar: %v g/l</font>`,wr.Alcohol,wr.Acid,wr.Sugar) +"<br></br>"
+        str = str + fmt.Sprintf(`<font size="4">Årgang: %v</font>`,wr.Vintage) +"<br></br>"
+        str = str + fmt.Sprintf(`<font size="4">Pris: %v</font>`,wr.Price) +"<br></br>"
+        str = str + fmt.Sprintf(`<font size="4">Alkohol: %v, Syre: %v g/l, Sukker: %v g/l</font>`,wr.Alcohol,wr.Acid,wr.Sugar) +"<br></br>"
 
         str = str + fmt.Sprintf(`<font size="4"><a href="https://www.google.com/search?q=%v+site:cellartracker.com">Search on cellartracker</a></font>`,wr.Name) +fmt.Sprintf(` <font size="4"><a href="https://www.google.com/search?q=%v+%v+site:cellartracker.com">(with producer)</a></font>`,wr.Name,wr.Producer) +"\t---\t"
         str = str + fmt.Sprintf(`<font size="4"><a href="http://www.vivino.com/search?q=%v+site:cellartracker.com">Search on vivino</a></font>`,wr.Name) +"<br></br>"
@@ -216,6 +268,16 @@ func makeHandler(fn func(http.ResponseWriter, *http.Request, string)) http.Handl
 }
 
 func main() {
+    ff,err:= os.OpenFile("log.txt", os.O_RDWR|os.O_APPEND, 0660)
+    if err!=nil{
+        log.Println(err)
+        ff,err=os.Create("log.txt")
+        if err!=nil{
+            log.Println(err)
+            return
+        }
+    }
+    log.SetOutput(ff)
 	flag.Parse()
 	http.HandleFunc("/view/", makeHandler(viewHandler))
 	http.HandleFunc("/edit/", makeHandler(editHandler))
