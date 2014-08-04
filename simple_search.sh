@@ -16,8 +16,8 @@
 
 
 
-curl -XGET "http://${1}:9200/wines/product/_search?pretty" -d '{
-        "query": {
-            "term":{"Name":"dame"}
+curl -XGET "http://${1}:9200/wines/product/_search?pretty" -d "{
+        \"query\": {
+            \"term\":{\"Name\":\"${2}\"}
         }
-    }'
+    }"

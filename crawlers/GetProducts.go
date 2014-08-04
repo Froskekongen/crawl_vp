@@ -163,10 +163,10 @@ func ParseOneMatch(val *[][]byte)WineRep{
 
 func ParseBehStatus(m string,wr *WineRep){
     m=html.UnescapeString(m)
-    if strings.Contains(m,"Utgått fra sortimentet"){
+    if strings.Contains(m,"fra sortimentet"){
         wr.Obsoleteproduct=true
     }
-    if strings.Contains(m,"Utsolgt fra leverandør"){
+    if strings.Contains(m,"Utsolgt fra"){
         wr.Soldout=true
     }
 }
