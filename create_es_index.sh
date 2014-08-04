@@ -1,11 +1,11 @@
-curl -XPOST 'http://172.30.31.203:9200/wines' -d '{
+curl -XPOST "http://${1}:9200/wines" -d '{
     "settings" : {
         "number_of_shards" : 3,
         "number_of_replicas" : 0
     }
 }'
 
-curl -XPUT 'http://172.30.31.203:9200/wines/product/_mapping' -d '{
+curl -XPUT "http://${1}:9200/wines/product/_mapping" -d '{
     "product" : {
         "properties" : {
             "Url" : {"type" : "string", "store" : true },
@@ -15,8 +15,7 @@ curl -XPUT 'http://172.30.31.203:9200/wines/product/_mapping' -d '{
             "Wholesaler" : {"type" : "string", "store" : true },
             "Material" : {"type" : "string", "store" : true },
             "Country" : {"type" : "string", "store" : true },
-            "Subcountry1" : {"type" : "string", "store" : true },
-            "Subcountry2" : {"type" : "string", "store" : true },
+            "Subcountry" : {"type" : "string", "store" : true },
             "Store" : {"type" : "string", "store" : true },
             "Distributor" : {"type" : "string", "store" : true },
 
