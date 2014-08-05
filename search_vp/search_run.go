@@ -62,7 +62,7 @@ func searchHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 
-var eshost *string = flag.String("host", "localhost", "Elasticsearch Server Host Address")
+var eshost *string = flag.String("eshost", "localhost", "Elasticsearch Server Host Address")
 func searchResultHandler(w http.ResponseWriter, r *http.Request) {  
 
     queries:=make([]string,0,5)
@@ -196,7 +196,7 @@ func ParseResponse(wrs []crawl_vp.WineRep) string{
     str:=""
     var temp string    
     for _,wr := range wrs{
-        temp=fmt.Sprintf(`<font size="5"><a href="%v+?HideDropdownIfNotInStock=true&ShowShopsWithProdInStock=true" STYLE="text-decoration: none"> %v</a></font>`,wr.Url,wr.Name)
+        temp=fmt.Sprintf(`<font size="5"><a href="%v+?HideDropdownIfNotInStock=true&ShowShopsWithProdInStock=true" STYLE="text-decoration: none" target="_blank"> %v</a></font>`,wr.Url,wr.Name)
         str=str+temp+"<br></br>"
         str = str + fmt.Sprintf(`<font size="4">Produsent: %v</font>`,wr.Producer) +"<br></br>"
         str = str + fmt.Sprintf(`<font size="4">Land: %v</font>`,wr.Country) +"<br></br>"
@@ -204,11 +204,22 @@ func ParseResponse(wrs []crawl_vp.WineRep) string{
         str = str + fmt.Sprintf(`<font size="4">Årgang: %v</font>`,wr.Vintage) +"<br></br>"
         str = str + fmt.Sprintf(`<font size="4">Pris: %v</font>`,wr.Price) +"<br></br>"
         str = str + fmt.Sprintf(`<font size="4">Alkohol: %v, Syre: %v g/l, Sukker: %v g/l</font>`,wr.Alcohol,wr.Acid,wr.Sugar) +"<br></br>"
+        str = str + fmt.Sprintf(`<font size="4">Produkttype: %v</font>`,wr.WineType) +"<br></br>"
+        if wr.Deeplookup{
+            str = str + fmt.Sprintf(`<font size="4">Råstoff: %v</font>`,wr.Material) +"<br></br>"
+        }
 
-        str = str + fmt.Sprintf(`<font size="4"><a href="https://www.google.com/search?q=%v+site:cellartracker.com">Search on cellartracker</a></font>`,wr.Name) +fmt.Sprintf(` <font size="4"><a href="https://www.google.com/search?q=%v+%v+site:cellartracker.com">(with producer)</a></font>`,wr.Name,wr.Producer) +"\t---\t"
-        str = str + fmt.Sprintf(`<font size="4"><a href="http://www.vivino.com/search?q=%v+site:cellartracker.com">Search on vivino</a></font>`,wr.Name) +"<br></br>"
-        str = str + fmt.Sprintf(`<font size="4"><a href="https://www.google.com/search?q=%v+site:ratebeer.com">Search on RateBeer</a></font>`,wr.Name) +"\t---\t"
-        str = str + fmt.Sprintf(`<font size="4"><a href="https://www.google.com/search?q=%v+site:beeradvocate.com">Search on BeerAdvocate</a></font>`,wr.Name) +"<br></br>"
+        if wr.Obsoleteproduct{
+            str=str + `<font size="4">Utgått fra sortimentet.</font><br></br>`
+        }
+        if wr.Soldout{
+            str=str + `<font size="4">Utsolgt fra leverandør.</font><br></br>`
+        }
+
+        str = str + fmt.Sprintf(`<font size="4"><a href="https://www.google.com/search?q=%v+site:cellartracker.com" target="_blank">Search on cellartracker</a></font>`,wr.Name) +fmt.Sprintf(` <font size="4"><a href="https://www.google.com/search?q=%v+%v+site:cellartracker.com" target="_blank">(with producer)</a></font>`,wr.Name,wr.Producer) +"\t---\t"
+        str = str + fmt.Sprintf(`<font size="4"><a href="http://www.vivino.com/search?q=%v" target="_blank">Search on vivino</a></font>`,wr.Name) +"<br></br>"
+        str = str + fmt.Sprintf(`<font size="4"><a href="https://www.google.com/search?q=%v+site:ratebeer.com" target="_blank">Search on RateBeer</a></font>`,wr.Name) +"\t---\t"
+        str = str + fmt.Sprintf(`<font size="4"><a href="https://www.google.com/search?q=%v+site:beeradvocate.com" target="_blank">Search on BeerAdvocate</a></font>`,wr.Name) +"<br></br>"
 
 
         str=str+"<br></br><br></br>"
