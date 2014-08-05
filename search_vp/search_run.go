@@ -62,7 +62,7 @@ func searchHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 
-var eshost *string = flag.String("host", "172.30.31.203", "Elasticsearch Server Host Address")
+var eshost *string = flag.String("host", "localhost", "Elasticsearch Server Host Address")
 func searchResultHandler(w http.ResponseWriter, r *http.Request) {  
 
     queries:=make([]string,0,5)

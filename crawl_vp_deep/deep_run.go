@@ -10,9 +10,9 @@ import(
     elastigo "github.com/mattbaird/elastigo/lib"
 )
 
-var (
-	eshost *string = flag.String("host", "172.30.31.203", "Elasticsearch Server Host Address")
-)
+//var (
+//	eshost *string = flag.String("host", "172.30.31.203", "Elasticsearch Server Host Address")
+//)
 
 
 func errf(err error){
@@ -24,7 +24,8 @@ func errf(err error){
 func main(){
 	//log.SetFlags(log.Ltime | log.Lshortfile)
 
-
+    var eshost *string = flag.String("eshost", "localhost", "Elasticsearch Server Host Address")
+    flag.Parse()
 
     elastChan:=make(chan *elastigo.Conn,1)
     c:= elastigo.NewConn()

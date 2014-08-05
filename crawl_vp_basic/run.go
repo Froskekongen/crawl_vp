@@ -14,14 +14,14 @@ import (
     //"encoding/json"
 )
 
-var (
-	eshost *string = flag.String("host", "172.30.31.203", "Elasticsearch Server Host Address")
-)
+//var (
+//	eshost *string = flag.String("host", "172.30.31.203", "Elasticsearch Server Host Address")
+//)
 
 
 func main(){
-
-  
+    var eshost *string = flag.String("eshost", "localhost", "Elasticsearch Server Host Address")
+    flag.Parse()
 
     mapPages:=crawl_vp.GetNPages()
     maxPPerType:=100000

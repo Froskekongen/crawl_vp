@@ -153,8 +153,8 @@ func ParseOneMatch(val *[][]byte)WineRep{
                     pf,_:=strconv.ParseUint(string(vv),10,64)
                     wr.Price=[]uint64{pf}
                     wr.LookupTimes=[]time.Time{time.Now()}
-                case jjj==6:
-                    ParseBehStatus(string(vv),&wr)
+//                case jjj==6:
+//                    ParseBehStatus(string(vv),&wr)
             }
         }
     }
