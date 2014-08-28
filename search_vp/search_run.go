@@ -310,5 +310,5 @@ func main() {
 		return
 	}
 
-	http.ListenAndServe(":8080", nil)
+	http.ListenAndServe("localhost:8080", nil)
 }
